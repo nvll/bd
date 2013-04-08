@@ -27,8 +27,7 @@ import (
 )
 
 type FileArr [][]uint8
-var maxFile int
-var maxIndex int
+var maxFileSize int
 
 func isGraph(char uint8) bool {
 	return (char > 0x20 && char <= 0x7E)
@@ -67,7 +66,7 @@ func lineDiffers(offset int, base []uint8, remote []uint8) [16]bool {
 
 	for i := 0; i < 16; i++ {
 		// No reason to check beyond the largest of the files
-		if offset+i >= maxFile {
+		if offset+i >= maxFileSize {
 			return diffMask
 		}
 
@@ -116,11 +115,10 @@ func printHexLine(offset int, fileData FileArr) {
 	fmt.Print("\n")
 }
 
-func getMaxes(f FileArr) {
+func getMaxSize(f FileArr) {
 	for i := range f {
-		if len(f[i]) > maxFile {
-			maxFile = len(f[i])
-			maxIndex = i
+		if len(f[i]) > maxFileSize {
+			maxFileSize = len(f[i])
 		}
 	}
 }
@@ -147,8 +145,8 @@ func main() {
 	if len(paths) == 1 {
 		hexdump(fileData[0])
 	} else {
-		getMaxes(fileData)
-		for offset := 0; offset < maxFile; offset += 16 {
+		getMaxSize(fileData)
+		for offset := 0; offset < maxFileSize; offset += 16 {
 			printHexLine(offset, fileData)
 		}
 	}
