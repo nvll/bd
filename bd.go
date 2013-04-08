@@ -26,10 +26,39 @@ import (
 	"os"
 )
 
+type FileArr [][]uint8
 var maxFile int
 var maxIndex int
 
-type FileArr [][]uint8
+func isGraph(char uint8) bool {
+	return (char > 0x20 && char <= 0x7E)
+}
+
+/* Mirrors output of the hd invocation of the linux hexdump */
+func hexdump(f []uint8) {
+	for offset := 0; offset < len(f); offset += 16 {
+		fmt.Printf("%08x  ", offset)
+		for i := 0; i < 16; i++ {
+			fmt.Printf("%s ", outputHex(offset + i, f))
+
+			if i == 7 { fmt.Print(" ") }
+		}
+		fmt.Print(" |")
+		for  i := 0; i < 16; i++ {
+			if offset + i < len(f) {
+				tmp := f[offset+i]
+				if isGraph(tmp) {
+					fmt.Printf("%c", tmp)
+				} else {
+					fmt.Print(".")
+				}
+			} else {
+				fmt.Print(".")
+			}
+		}
+		fmt.Print("|\n")
+	}
+}
 
 /* Determines whether if a 16 byte row has a mismatch in any supplied file */
 func lineDiffers(offset int, base []uint8, remote []uint8) [16]bool {
@@ -82,7 +111,7 @@ func printHexLine(offset int, fileData FileArr) {
 				fmt.Print(" ")
 			}
 		}
-		fmt.Print("\t")
+		fmt.Print("  ")
 	}
 	fmt.Print("\n")
 }
@@ -96,15 +125,11 @@ func getMaxes(f FileArr) {
 	}
 }
 
-func isGraph(char uint8) bool {
-	return (char >= 0x20 && char <= 0x7E)
-}
-
 func main() {
 	var err error
 	var paths = os.Args[1:]
 
-	if len(paths) < 2 {
+	if len(paths) < 1 {
 		println("usage:", os.Args[0], "<files>")
 		os.Exit(1)
 	}
@@ -118,9 +143,14 @@ func main() {
 		}
 	}
 
-	getMaxes(fileData)
-	for i := 0; i < maxFile; i += 16 {
-		printHexLine(i, fileData)
+	/* If only one file is provided then act like hd */
+	if len(paths) == 1 {
+		hexdump(fileData[0])
+	} else {
+		getMaxes(fileData)
+		for offset := 0; offset < maxFile; offset += 16 {
+			printHexLine(offset, fileData)
+		}
 	}
 }
 
